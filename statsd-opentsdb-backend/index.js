@@ -52,9 +52,6 @@ var post_stats = function opentsdb_post_stats(statString) {
       });
       opentsdb.on('connect', function() {
         var ts = Math.round(new Date().getTime() / 1000);
-        var namespace = globalNamespace.concat('statsd');
-        statString += 'put ' + namespace.join(".") + '.opentsdbStats.last_exception ' + last_exception + ' ' + ts + "\n";
-        statString += 'put ' + namespace.join(".") + '.opentsdbStats.last_flush ' + last_flush + ' ' + ts + "\n";
 		if (debug) {
 			util.log(statString)
 		}
@@ -108,7 +105,7 @@ function strip_tags(metric_name) {
 
 
 var flush_stats = function opentsdb_flush(ts, metrics) {
-  var suffix = " source=statsd\n";
+  var suffix = " default=yes\n";
   var starttime = Date.now();
   var statString = '';
   var numStats = 0;
@@ -168,22 +165,6 @@ var flush_stats = function opentsdb_flush(ts, metrics) {
     var namespace = setsNamespace.concat(stripped_key);
     statString += 'put ' + namespace.join(".") + '.count ' + ts + ' ' + sets[key].values().length + ' ' + tags.join(' ') + suffix;
     numStats += 1;
-  }
-
-  var namespace = globalNamespace.concat('statsd');
-  if (legacyNamespace === true) {
-    statString += 'put statsd.numStats ' + ts + ' ' + numStats + suffix;
-    statString += 'put stats.statsd.opentsdbStats.calculationtime ' + ts + ' ' + (Date.now() - starttime) + suffix;
-    for (key in statsd_metrics) {
-      statString += 'put stats.statsd.' + key + ' ' + ts + ' ' + statsd_metrics[key] + suffix;
-    }
-  } else {
-    statString += 'put ' + namespace.join(".") + '.numStats ' + ts + ' ' + numStats + suffix;
-    statString += 'put ' + namespace.join(".") + '.opentsdbStats.calculationtime ' + ts + ' ' + (Date.now() - starttime) + suffix;
-    for (key in statsd_metrics) {
-      var the_key = namespace.concat(key);
-      statString += 'put ' + the_key.join(".") + ' ' + ts + ' ' + statsd_metrics[key] + suffix;
-    }
   }
 
   post_stats(statString);
